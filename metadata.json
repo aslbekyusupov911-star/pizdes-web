@@ -1,0 +1,6 @@
+{
+  "name": "UTU Ranch - Ranch Texnologiya Universiteti",
+  "description": "Urganch Ranch Texnologiya Universiteti rasmiy veb-sayti. Ta'lim yo'nalishlari, kafedralar, yangiliklar, qabul va talabalar portali.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
