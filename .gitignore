@@ -1,3 +1,4 @@
+# Node
 node_modules/
 build/
 dist/
@@ -6,3 +7,18 @@ coverage/
 *.log
 .env*
 !.env.example
+backend/.env
+!backend/.env.example
+
+# Python
+venv/
+backend/venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.db
+*.sqlite3
+
+# Uploads
+public/uploads/*
+!public/uploads/.gitkeep

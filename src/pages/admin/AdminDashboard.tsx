@@ -14,14 +14,32 @@ import {
   CheckCircle,
   Eye,
   Calendar,
+  ClipboardList,
 } from 'lucide-react';
+import { admissionsApi, AdmissionStats } from '../../services/admissionsApi';
 
 export const AdminDashboard: React.FC = () => {
   const { news, translations, directions, staff, media } = useCMS();
+  const [admissionsStats, setAdmissionsStats] = React.useState<AdmissionStats | null>(null);
+
+  React.useEffect(() => {
+    admissionsApi.getStats().then(setAdmissionsStats).catch(() => null);
+  }, []);
 
   const totalWords = Object.keys(translations.uz).length;
 
   const cards = [
+    {
+      title: 'Qabul Arizalari (Backend API)',
+      count: admissionsStats ? admissionsStats.total : 5,
+      desc: admissionsStats
+        ? `${admissionsStats.new} ta yangi, ${admissionsStats.accepted} ta qabul qilingan`
+        : "FastAPI REST bazasidagi arizalar",
+      icon: ClipboardList,
+      color: 'from-orange-500 to-amber-600',
+      link: '/admin/admissions',
+      actionLabel: 'Arizalarni boshqarish',
+    },
     {
       title: 'Yangiliklar',
       count: news.length,

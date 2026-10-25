@@ -14,6 +14,7 @@ import {
   ExternalLink,
   Shield,
   Edit3,
+  ClipboardList,
 } from 'lucide-react';
 
 export const AdminLayout: React.FC = () => {
@@ -32,6 +33,7 @@ export const AdminLayout: React.FC = () => {
 
   const navLinks = [
     { to: '/admin', label: 'Bosh sahifa (Dashboard)', icon: LayoutDashboard, end: true },
+    { to: '/admin/admissions', label: 'Qabul arizalari', icon: ClipboardList },
     { to: '/admin/news', label: 'Yangiliklar', icon: Newspaper },
     { to: '/admin/words', label: "So'zlar & Tarjimalar", icon: Type },
     { to: '/admin/media', label: 'Rasmlar & Media', icon: ImageIcon },

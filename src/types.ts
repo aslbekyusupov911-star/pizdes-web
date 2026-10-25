@@ -105,12 +105,16 @@ export interface PartnerItem {
 
 export interface VacancyItem {
   id: number;
-  title: string;
+  title?: string;
+  title_uz?: string;
+  title_ru?: string;
+  title_en?: string;
+  category?: string;
   department: string;
   type: string;
   salary: string;
   deadline: string;
-  requirements: string[];
+  requirements: string[] | string;
 }
 
 export type StaffMember = RectorateMember;

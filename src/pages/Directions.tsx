@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useLanguage } from '../context/LanguageContext';
+import { useCMS } from '../context/CMSContext';
 import TabsHeader from '../components/TabsHeader';
 import { studyTabs } from '../data/navigationTabs';
 import Footer from '../components/Footer';
@@ -17,6 +18,7 @@ interface DirectionsProps {
 
 export const Directions: React.FC<DirectionsProps> = ({ initialType = 'all' }) => {
   const { leng, t } = useLanguage();
+  const { directions } = useCMS();
   const [activeTab, setActiveTab] = useState(() => {
     if (initialType === 'sirtqi') return 2;
     if (initialType === 'magistratura') return 3;
@@ -25,10 +27,17 @@ export const Directions: React.FC<DirectionsProps> = ({ initialType = 'all' }) =
   const [search, setSearch] = useState('');
 
   let currentList: any[] = [];
-  if (activeTab === 1) currentList = defaultKunduzgi;
-  else if (activeTab === 2) currentList = defaultSirtqi;
-  else if (activeTab === 3) currentList = defaultMagister;
-  else currentList = defaultKunduzgi;
+  if (directions && directions.length > 0) {
+    if (activeTab === 1) currentList = directions.filter(d => !d.type || d.type === 'kunduzgi');
+    else if (activeTab === 2) currentList = directions.filter(d => d.type === 'sirtqi');
+    else if (activeTab === 3) currentList = directions.filter(d => d.type === 'magistratura');
+    else currentList = directions;
+  } else {
+    if (activeTab === 1) currentList = defaultKunduzgi;
+    else if (activeTab === 2) currentList = defaultSirtqi;
+    else if (activeTab === 3) currentList = defaultMagister;
+    else currentList = defaultKunduzgi;
+  }
 
   const filtered = currentList.filter((item: any) => {
     const q = search.toLowerCase();

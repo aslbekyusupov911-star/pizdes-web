@@ -1,28 +1,41 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
+import { useCMS } from '../context/CMSContext';
 import Footer from '../components/Footer';
 import { yangiliklar as defaultNewsObj } from '../data/initialData';
 import { NewsItem } from '../types';
+import { newsApi } from '../services/api';
 import { Calendar, Eye, ArrowLeft, Share2 } from 'lucide-react';
 
 export const NewsDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { leng, t } = useLanguage();
+  const { news } = useCMS();
   const allArticles: NewsItem[] = (defaultNewsObj as any)?.results || [];
   const [article, setArticle] = useState<NewsItem | null>(null);
 
   useEffect(() => {
-    const found = allArticles.find((a) => String(a.id) === String(id));
-    if (found) setArticle(found);
+    // 1. Check in CMS news
+    const cmsFound = news.find((a) => String(a.id) === String(id));
+    if (cmsFound) {
+      setArticle(cmsFound);
+      return;
+    }
 
-    fetch(`https://new.utu-ranch.uz/news/yangiliklar/${id}/`)
-      .then((res) => res.json())
-      .then((json) => {
-        if (json && json.id) setArticle(json);
-      })
-      .catch(() => {});
-  }, [id]);
+    // 2. Check in fallback default articles
+    const defaultFound = allArticles.find((a) => String(a.id) === String(id));
+    if (defaultFound) setArticle(defaultFound);
+
+    // 3. Fetch from FastAPI backend
+    if (id) {
+      newsApi.getById(Number(id))
+        .then((item) => {
+          if (item) setArticle(item);
+        })
+        .catch(() => {});
+    }
+  }, [id, news]);
 
   if (!article) {
     return (

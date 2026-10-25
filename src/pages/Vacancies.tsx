@@ -1,18 +1,28 @@
 import React, { useState } from 'react';
 import { useLanguage } from '../context/LanguageContext';
+import { useCMS } from '../context/CMSContext';
 import TabsHeader from '../components/TabsHeader';
 import { universityTabs } from '../data/navigationTabs';
 import Footer from '../components/Footer';
-import { Briefcase, MapPin, DollarSign, Clock, CheckCircle2, Send, ChevronDown } from 'lucide-react';
+import { Briefcase, MapPin, DollarSign, Clock, CheckCircle2, Send, ChevronDown, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { contactApi } from '../services/api';
 
 export const Vacancies: React.FC = () => {
   const { leng, t } = useLanguage();
+  const { vacancies: cmsVacancies } = useCMS();
   const [selectedCategory, setSelectedCategory] = useState('Barchasi');
   const [selectedVacancy, setSelectedVacancy] = useState<any>(null);
   const [expandedId, setExpandedId] = useState<number | null>(1);
 
-  const vacancies = [
+  // Resume form state
+  const [applicantName, setApplicantName] = useState('');
+  const [applicantPhone, setApplicantPhone] = useState('');
+  const [applicantEmail, setApplicantEmail] = useState('');
+  const [resumeSubmitting, setResumeSubmitting] = useState(false);
+  const [resumeSuccess, setResumeSuccess] = useState(false);
+
+  const fallbackVacancies = [
     {
       id: 1,
       title_uz: "Ingliz tili fani o‘qituvchisi (Professor / Dotsent)",
@@ -71,6 +81,8 @@ export const Vacancies: React.FC = () => {
       ]
     }
   ];
+
+  const vacancies = (cmsVacancies && cmsVacancies.length > 0) ? cmsVacancies : fallbackVacancies;
 
   const categories = ['Barchasi', 'Pedagogik', "Ma'muriy"];
 
@@ -172,10 +184,15 @@ export const Vacancies: React.FC = () => {
                         Nomzodga qo'yiladigan talablar:
                       </h4>
                       <ul className="text-xs text-gray-600 space-y-1.5">
-                        {item.requirements.map((req, rIdx) => (
+                        {(Array.isArray(item.requirements)
+                          ? item.requirements
+                          : typeof item.requirements === 'string'
+                          ? item.requirements.split(';')
+                          : []
+                        ).map((req: string, rIdx: number) => (
                           <li key={rIdx} className="flex items-start gap-1.5">
                             <CheckCircle2 className="w-3.5 h-3.5 text-[#f56100] flex-shrink-0 mt-0.5" />
-                            <span>{req}</span>
+                            <span>{req.trim()}</span>
                           </li>
                         ))}
                       </ul>
@@ -208,68 +225,111 @@ export const Vacancies: React.FC = () => {
               O'zingizga ma'qul kelgan bo'sh ish o'rniga nomzodlik uchun ma'lumotlaringizni to'ldiring.
             </p>
 
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                alert("Rezyumeingiz qabul qilindi! Kadrlar bo'limi siz bilan bog'lanadi.");
-              }}
-              className="space-y-4"
-            >
-              <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">To'liq ism-familiyangiz</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Aliyev Vali G'aniyevich"
-                  className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs outline-none focus:border-[#f56100]"
-                />
+            {resumeSuccess ? (
+              <div className="p-6 bg-emerald-50 border border-emerald-200 rounded-2xl text-center space-y-2">
+                <CheckCircle2 className="w-8 h-8 text-emerald-600 mx-auto" />
+                <h4 className="font-bold text-sm text-gray-900">Rezyumeingiz qabul qilindi!</h4>
+                <p className="text-xs text-gray-600">
+                  Kadrlar bo'limi tez orada siz bilan bog'lanadi.
+                </p>
               </div>
-
-              <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">Telefon raqamingiz</label>
-                <input
-                  type="tel"
-                  required
-                  placeholder="+998 (__) ___ - __ - __"
-                  className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs outline-none focus:border-[#f56100]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">Elektron pochta</label>
-                <input
-                  type="email"
-                  required
-                  placeholder="nomzod@gmail.com"
-                  className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs outline-none focus:border-[#f56100]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">Qiziqtirgan vakansiya</label>
-                <select
-                  value={selectedVacancy?.title_uz || ''}
-                  onChange={(e) => {
-                    const found = vacancies.find((v) => v.title_uz === e.target.value);
-                    if (found) setSelectedVacancy(found);
-                  }}
-                  className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs outline-none focus:border-[#f56100]"
-                >
-                  <option value="">Vakansiyani tanlang...</option>
-                  {vacancies.map((v) => (
-                    <option key={v.id} value={v.title_uz}>{v.title_uz}</option>
-                  ))}
-                </select>
-              </div>
-
-              <button
-                type="submit"
-                className="w-full py-3 bg-[#f56100] text-white rounded-xl text-xs font-bold hover:bg-[#d95200] transition-colors shadow flex items-center justify-center gap-2 hover:scale-[1.02]"
+            ) : (
+              <form
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  setResumeSubmitting(true);
+                  try {
+                    await contactApi.send({
+                      name: applicantName,
+                      phone: applicantPhone,
+                      email: applicantEmail,
+                      vacancy_title: selectedVacancy?.title_uz || 'Umumiy nomzodlik',
+                      message: 'Vakansiya bo\'yicha rezyume yuborildi',
+                    });
+                    setResumeSuccess(true);
+                    setApplicantName('');
+                    setApplicantPhone('');
+                    setApplicantEmail('');
+                    setTimeout(() => setResumeSuccess(false), 5000);
+                  } catch (err: any) {
+                    alert("Rezyumeni yuborishda xatolik yuz berdi: " + (err.message || ''));
+                  } finally {
+                    setResumeSubmitting(false);
+                  }
+                }}
+                className="space-y-4"
               >
-                <Send className="w-4 h-4" />
-                Ariza yuborish
-              </button>
-            </form>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">To'liq ism-familiyangiz *</label>
+                  <input
+                    type="text"
+                    required
+                    value={applicantName}
+                    onChange={(e) => setApplicantName(e.target.value)}
+                    placeholder="Aliyev Vali G'aniyevich"
+                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs outline-none focus:border-[#f56100]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Telefon raqamingiz *</label>
+                  <input
+                    type="tel"
+                    required
+                    value={applicantPhone}
+                    onChange={(e) => setApplicantPhone(e.target.value)}
+                    placeholder="+998 90 123 45 67"
+                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs outline-none focus:border-[#f56100]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Elektron pochta</label>
+                  <input
+                    type="email"
+                    value={applicantEmail}
+                    onChange={(e) => setApplicantEmail(e.target.value)}
+                    placeholder="nomzod@gmail.com"
+                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs outline-none focus:border-[#f56100]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Qiziqtirgan vakansiya</label>
+                  <select
+                    value={selectedVacancy?.title_uz || ''}
+                    onChange={(e) => {
+                      const found = vacancies.find((v) => v.title_uz === e.target.value);
+                      if (found) setSelectedVacancy(found);
+                    }}
+                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs outline-none focus:border-[#f56100]"
+                  >
+                    <option value="">Vakansiyani tanlang...</option>
+                    {vacancies.map((v) => (
+                      <option key={v.id} value={v.title_uz}>{v.title_uz}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={resumeSubmitting}
+                  className="w-full py-3 bg-[#f56100] text-white rounded-xl text-xs font-bold hover:bg-[#d95200] transition-colors shadow flex items-center justify-center gap-2 hover:scale-[1.02] disabled:opacity-70 cursor-pointer"
+                >
+                  {resumeSubmitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Yuborilmoqda...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4" />
+                      Ariza yuborish
+                    </>
+                  )}
+                </button>
+              </form>
+            )}
           </div>
         </div>
       </div>

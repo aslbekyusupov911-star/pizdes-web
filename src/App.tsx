@@ -41,6 +41,7 @@ import AdminMedia from './pages/admin/AdminMedia';
 import AdminDirections from './pages/admin/AdminDirections';
 import AdminStaff from './pages/admin/AdminStaff';
 import AdminSettings from './pages/admin/AdminSettings';
+import AdminAdmissions from './pages/admin/AdminAdmissions';
 
 function AppLayout() {
   const location = useLocation();
@@ -100,6 +101,7 @@ function AppLayout() {
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<AdminDashboard />} />
+            <Route path="admissions" element={<AdminAdmissions />} />
             <Route path="news" element={<AdminNews />} />
             <Route path="words" element={<AdminWords />} />
             <Route path="media" element={<AdminMedia />} />

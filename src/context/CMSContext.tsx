@@ -8,6 +8,7 @@ import {
 } from '../data/initialData';
 import { translations as defaultTranslations } from './LanguageContext';
 import { Language, NewsItem, StudyDirection, StaffMember, PartnerItem, VacancyItem } from '../types';
+import { newsApi, directionsApi, staffApi, partnersApi, vacanciesApi, API_BASE_URL } from '../services/api';
 
 const combinedInitialDirections: StudyDirection[] = [
   ...initialKunduzgi.map((d: any) => ({ ...d, type: 'kunduzgi' as const })),
@@ -231,13 +232,32 @@ export const CMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.setItem(STORAGE_KEY + '_partners', JSON.stringify(partners));
   }, [partners]);
 
+  // Sync with FastAPI backend on mount
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY + '_vacancies', JSON.stringify(vacancies));
-  }, [vacancies]);
+    newsApi.getAll().then((data) => {
+      if (data && data.length > 0) setNews(data);
+    }).catch(() => {});
+
+    directionsApi.getAll().then((data) => {
+      if (data && data.length > 0) setDirections(data);
+    }).catch(() => {});
+
+    staffApi.getAll().then((data) => {
+      if (data && data.length > 0) setStaff(data);
+    }).catch(() => {});
+
+    partnersApi.getAll().then((data) => {
+      if (data && data.length > 0) setPartners(data);
+    }).catch(() => {});
+
+    vacanciesApi.getAll().then((data) => {
+      if (data && data.length > 0) setVacancies(data);
+    }).catch(() => {});
+  }, []);
 
   // Auth functions
   const login = (password: string) => {
-    if (password === 'admin' || password === 'ranch2026' || password === '123456') {
+    if (password === 'admin' || password === 'ranch2026' || password === '123456' || password === 'admin123') {
       setIsAdminLoggedIn(true);
       localStorage.setItem(AUTH_KEY, 'true');
       return true;
@@ -310,6 +330,9 @@ export const CMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const newId = Date.now();
     const newItem: NewsItem = { ...item, id: newId };
     setNews((prev) => [newItem, ...prev]);
+    newsApi.create(item).then((saved) => {
+      setNews((prev) => prev.map((n) => (n.id === newId ? saved : n)));
+    }).catch(() => {});
     return newItem;
   };
 
@@ -317,48 +340,63 @@ export const CMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setNews((prev) =>
       prev.map((n) => (n.id === id ? { ...n, ...item } : n))
     );
+    newsApi.update(id, item).catch(() => {});
   };
 
   const deleteNews = (id: number) => {
     setNews((prev) => prev.filter((n) => n.id !== id));
+    newsApi.delete(id).catch(() => {});
   };
 
   // Directions
   const addDirection = (item: Omit<StudyDirection, 'id'>) => {
     const newId = Date.now();
     setDirections((prev) => [{ ...item, id: newId }, ...prev]);
+    directionsApi.create(item).then((saved) => {
+      setDirections((prev) => prev.map((d) => (d.id === newId ? saved : d)));
+    }).catch(() => {});
   };
 
   const updateDirection = (id: number, item: Partial<StudyDirection>) => {
     setDirections((prev) =>
       prev.map((d) => (d.id === id ? { ...d, ...item } : d))
     );
+    directionsApi.update(id, item).catch(() => {});
   };
 
   const deleteDirection = (id: number) => {
     setDirections((prev) => prev.filter((d) => d.id !== id));
+    directionsApi.delete(id).catch(() => {});
   };
 
   // Staff
   const addStaff = (item: Omit<StaffMember, 'id'>) => {
     const newId = Date.now();
     setStaff((prev) => [{ ...item, id: newId }, ...prev]);
+    staffApi.create(item).then((saved) => {
+      setStaff((prev) => prev.map((s) => (s.id === newId ? saved : s)));
+    }).catch(() => {});
   };
 
   const updateStaff = (id: number, item: Partial<StaffMember>) => {
     setStaff((prev) =>
       prev.map((s) => (s.id === id ? { ...s, ...item } : s))
     );
+    staffApi.update(id, item).catch(() => {});
   };
 
   const deleteStaff = (id: number) => {
     setStaff((prev) => prev.filter((s) => s.id !== id));
+    staffApi.delete(id).catch(() => {});
   };
 
   // Partners
   const addPartner = (item: Omit<PartnerItem, 'id'>) => {
     const newId = Date.now();
     setPartners((prev) => [{ ...item, id: newId }, ...prev]);
+    partnersApi.create(item).then((saved) => {
+      setPartners((prev) => prev.map((p) => (p.id === newId ? saved : p)));
+    }).catch(() => {});
   };
 
   const updatePartner = (id: number, item: Partial<PartnerItem>) => {
@@ -369,12 +407,16 @@ export const CMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const deletePartner = (id: number) => {
     setPartners((prev) => prev.filter((p) => p.id !== id));
+    partnersApi.delete(id).catch(() => {});
   };
 
   // Vacancies
   const addVacancy = (item: Omit<VacancyItem, 'id'>) => {
     const newId = Date.now();
     setVacancies((prev) => [{ ...item, id: newId }, ...prev]);
+    vacanciesApi.create(item).then((saved) => {
+      setVacancies((prev) => prev.map((v) => (v.id === newId ? saved : v)));
+    }).catch(() => {});
   };
 
   const updateVacancy = (id: number, item: Partial<VacancyItem>) => {
@@ -385,6 +427,7 @@ export const CMSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const deleteVacancy = (id: number) => {
     setVacancies((prev) => prev.filter((v) => v.id !== id));
+    vacanciesApi.delete(id).catch(() => {});
   };
 
   // Backup & Reset

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useLanguage } from '../context/LanguageContext';
+import { useCMS } from '../context/CMSContext';
 import TabsHeader from '../components/TabsHeader';
 import { universityTabs } from '../data/navigationTabs';
 import Footer from '../components/Footer';
@@ -10,16 +11,8 @@ import ScrollReveal from '../components/ScrollReveal';
 
 export const Rectorate: React.FC = () => {
   const { leng, t } = useLanguage();
-  const [members, setMembers] = useState<RectorateMember[]>(defaultRectorate as unknown as RectorateMember[]);
-
-  useEffect(() => {
-    fetch('https://new.utu-ranch.uz/category/rektorot/')
-      .then((res) => res.json())
-      .then((json) => {
-        if (json && json.length > 0) setMembers(json);
-      })
-      .catch(() => {});
-  }, []);
+  const { staff } = useCMS();
+  const members = (staff && staff.length > 0) ? (staff as unknown as RectorateMember[]) : (defaultRectorate as unknown as RectorateMember[]);
 
   return (
     <div className="rectoratePage min-h-screen">

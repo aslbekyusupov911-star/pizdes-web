@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
+import { useCMS } from '../context/CMSContext';
 import TabsHeader from '../components/TabsHeader';
 import { newsTabs } from '../data/navigationTabs';
 import Footer from '../components/Footer';
@@ -15,11 +16,12 @@ interface NewsListProps {
 
 export const NewsList: React.FC<NewsListProps> = ({ category = 'all' }) => {
   const { leng, t } = useLanguage();
+  const { news } = useCMS();
   const [searchParams] = useSearchParams();
   const searchParamQuery = searchParams.get('search') || '';
 
   const initialArticles: NewsItem[] = (defaultNewsObj as any)?.results || [];
-  const [articles, setArticles] = useState<NewsItem[]>(initialArticles);
+  const articlesList = (news && news.length > 0) ? news : initialArticles;
   const [searchTerm, setSearchTerm] = useState(searchParamQuery);
 
   const getActiveTab = () => {
@@ -29,18 +31,10 @@ export const NewsList: React.FC<NewsListProps> = ({ category = 'all' }) => {
     return 1;
   };
 
-  useEffect(() => {
-    fetch('https://new.utu-ranch.uz/news/yangiliklar/')
-      .then((res) => res.json())
-      .then((json) => {
-        if (json && json.results && json.results.length > 0) {
-          setArticles(json.results);
-        }
-      })
-      .catch(() => {});
-  }, []);
-
-  const filtered = articles.filter((item) => {
+  const filtered = articlesList.filter((item) => {
+    if (category !== 'all' && item.category && item.category !== category) {
+      return false;
+    }
     const q = searchTerm.toLowerCase();
     const title = (item.title_uz || item.title_ru || item.title_en || '').toLowerCase();
     const desc = (item.desc_uz || item.desc_ru || item.desc_en || '').toLowerCase();
